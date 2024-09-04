@@ -1,0 +1,9 @@
+[Unit]
+Description=Collect Nextcloud metrics
+
+[Service]
+ExecStartPre=rm -f /var/lib/prometheus/node-exporter/nextcloud.prom
+ExecStart=/usr/local/bin/prom_nextcloud.py > /var/lib/prometheus/node-exporter/nextcloud.prom
+User=prometheus
+Group=prometheus
+StandardOutput=file:/var/lib/prometheus/node-exporter/nextcloud.prom

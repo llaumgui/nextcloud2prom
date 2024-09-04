@@ -1,0 +1,10 @@
+[Unit]
+Description=Collect Nextcloud metrics
+
+[Timer]
+OnBootSec=5min
+OnCalendar=*-*-* *:0/2:00
+Unit=prom-nextcloud.service
+
+[Install]
+WantedBy=timers.target
