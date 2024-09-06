@@ -70,3 +70,11 @@ systemctl start prom-nextcloud.service
 systemctl start prom-nextcloud.timer
 systemctl enable prom-nextcloud.timer
 ```
+
+## Develop
+
+```bash
+python -m venv env
+source env/bin/activate
+pip install -r requirements.txt
+```
