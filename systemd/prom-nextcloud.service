@@ -2,6 +2,8 @@
 Description=Collect Nextcloud metrics
 
 [Service]
+Environment=NC_URL=https://cloud.domain.ltd/ocs/v2.php/apps/serverinfo/api/v1/info?format=json
+Environment=NC_TOKEN=my-nc-token
 ExecStartPre=rm -f /var/lib/prometheus/node-exporter/nextcloud.prom
 ExecStart=/usr/local/bin/prom_nextcloud.py > /var/lib/prometheus/node-exporter/nextcloud.prom
 User=prometheus

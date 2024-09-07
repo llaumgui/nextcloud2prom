@@ -16,114 +16,107 @@ import requests
 from prometheus_client import CollectorRegistry, Gauge, Info, generate_latest
 
 # Configuration
-NC_URL = os.getenv('NC_URL', 'https://cloud.domain.ltd/ocs/v2.php/apps/serverinfo/api/v1/info?format=json')
-NC_TOKEN = os.getenv('NC_TOKEN', 'NC_TOKEN')
+NC_URL = os.getenv('NC_URL')
+NC_TOKEN = os.getenv('NC_TOKEN')
+if not NC_URL or not NC_TOKEN:
+    print("Please setup NC_URL and NC_TOKEN in your prom-nextcloud.service file.")
+    exit(1)
 
 
-def _load_json_info():
-    """
-    Load JSON information from Nextcloud.
-    """
+class Collector:
 
-    headers = {
-        "NC-Token": NC_TOKEN
-    }
-    response = requests.get(NC_URL, headers=headers)
+    __json_info = dict
+    __registry = CollectorRegistry()
 
-    if response.status_code == 200:
-        return response.json()
-    else:
-        return False
+    def __init__(self):
+        self.__json_info = self.__load_json_info()
+        self.__write_status()
 
+        if self.__json_info is not False:
+            # 'nextcloud' part
+            self.__json_iterator(self.__json_info['ocs']['data']['nextcloud'].items(),
+                                 'nextcloud',
+                                 'Nextcloud')
+            self.__json_iterator(self.__json_info['ocs']['data']['server'].items(),
+                                 'nextcloud_server',
+                                 'Nextcloud server')
+            self.__json_iterator(self.__json_info['ocs']['data']['activeUsers'].items(),
+                                 'nextcloud_active_users',
+                                 'Nextcloud active users')
 
-def _write_status(registry, json_info):
-    """
-    Is Nextcloud instance is up ?
-    """
-    try:
-        status = 1 if json_info['ocs']['meta']['status'] == "ok" else 0
-    except TypeError:
-        status = 0
-        pass
+    def __load_json_info(self):
+        """
+        Load JSON information from Nextcloud server info application.
+        """
+        headers = {
+            "NC-Token": NC_TOKEN
+        }
+        response = requests.get(NC_URL, headers=headers)
 
-    Gauge('nextcloud_status', "Nextcloud is OK ?", registry=registry).set(status)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return False
 
+    def print(self):
+        """
+        Print registry.
+        """
+        print(generate_latest(self.__registry).decode(), end='')
 
-def _write_system(registry, json_info):
-    """
-    Nextcloud system information.
-    """
-    i = Info('nextcloud_system', 'Nextcloud system informationq.', registry=registry)
-    info_data = {}
+    def __write_status(self):
+        """
+        Is Nextcloud instance is up ?
+        """
 
-    for system, value in json_info['ocs']['data']['nextcloud']['system'].items():
-        # For string
-        if isinstance(value, str):
-            info_data[system] = value
-        # For numeric
-        elif isinstance(value, int):
-            Gauge(f"nextcloud_system_{system}_bytes",
-                  f"Nextcloud system `{system}` information.",
-                  registry=registry).set(value)
-        # For cpuload list
-        elif isinstance(value, list) and system == 'cpuload':
-            g = Gauge(f"nextcloud_system_{system}",
-                      f"Nextcloud system `{system}` information.",
-                      ['cpu'],
-                      registry=registry)
-            for item, item_value in enumerate(value):
-                g.labels(item).set(item_value)
+        try:
+            status = 1 if self.__json_info['ocs']['meta']['status'] == "ok" else 0
+        except TypeError:
+            status = 0
+            pass
 
-        i.info(info_data)
+        Gauge('nextcloud_status', "Nextcloud is OK ?", registry=self.__registry).set(status)
 
+    def __json_iterator(self, part_json: dict, part_id: str, part_title: str):
+        """
+        Display iterative information from part of JSON.
+        """
+        for item, item_value in part_json:
+            info_data = {}
+            item_id = item.replace(".", "_")
+            current_id = f"{part_id}_{item_id}"
+            current_title = f"{part_title} `{item}` information."
 
-def _write_storage(registry, json_info):
-    """
-    Nextcloud storage information.
-    """
-    for storage, value in json_info['ocs']['data']['nextcloud']['storage'].items():
-        Gauge(f"nextcloud_storage_{storage}_total",
-              f"Nextcloud storage `{storage}` information.",
-              registry=registry).set(value)
+            # For string
+            if isinstance(item_value, str):
+                info_data[item] = item_value
 
+            # For numeric
+            elif isinstance(item_value, int):
+                Gauge(current_id, current_title, registry=self.__registry).set(item_value)
 
-def _write_shares(registry, json_info):
-    """
-    Nextcloud shares information.
-    """
-    for share, value in json_info['ocs']['data']['nextcloud']['shares'].items():
-        Gauge(f"nextcloud_shares_{share}_total",
-              f"Nextcloud shares `{share}` information.",
-              registry=registry).set(value)
+            # For list
+            elif isinstance(item_value, list) and isinstance(list[0], int):
+                g = Gauge(current_id, current_title, [item], registry=self.__registry)
+                for list_item, list_item_value in enumerate(item_value):
+                    g.labels(list_item).set(list_item_value)
 
+            # For dict
+            elif isinstance(item_value, dict):
+                # Recurtion
+                self.__json_iterator(item_value.items(), current_id, current_title)
 
-def _write_active_users(registry, json_info):
-    """
-    Nextcloud active users information.
-    """
-    Gauge('nextcloud_active_users_5m', "Nextcloud active users last 5 minuts.",
-                                       registry=registry).set(json_info['ocs']['data']['activeUsers']['last5minutes'])
-    Gauge('nextcloud_active_users_1h', "Nextcloud active users last 1 hour.",
-                                       registry=registry).set(json_info['ocs']['data']['activeUsers']['last1hour'])
-    Gauge('nextcloud_active_users_1d', "Nextcloud active users last 24 hours.",
-                                       registry=registry).set(json_info['ocs']['data']['activeUsers']['last24hours'])
+            # "Dump" informations
+            if info_data:
+                Info(current_id, current_title, registry=self.__registry).info(info_data)
 
 
 def _main():
     """
     Main function.
     """
-    json_info = _load_json_info()
-
-    registry = CollectorRegistry()
-    _write_status(registry, json_info)
-    if json_info is not False:
-        _write_system(registry, json_info)
-        _write_storage(registry, json_info)
-        _write_shares(registry, json_info)
-        _write_active_users(registry, json_info)
-
-    print(generate_latest(registry).decode(), end='')
+    collector = Collector()
+    collector.print()
 
 
 if __name__ == "__main__":
