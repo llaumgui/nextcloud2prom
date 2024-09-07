@@ -2,6 +2,9 @@
 
 Get Nextcloud server's info in JSON and convert to [node_exporter textfile format](https://github.com/prometheus/node_exporter?tab=readme-ov-file#textfile-collector).
 
+![image](https://github.com/user-attachments/assets/ad11f6a0-9924-4cb8-9481-4a24d06fe803)
+
+
 ## Install
 
 ### On Nextcloud
@@ -56,7 +59,7 @@ chmod +x /usr/local/bin/prom_nextcloud.py
 cp system.d/prom* /etc/systemd/system
 ```
 
-* Edit /usr/local/bin/prom-nextcloud.py with your `NC_URL` and `NC_TOKEN` informations.
+* Edit /etc/systemd/system/prom-nextcloud.service with your `NC_URL` and `NC_TOKEN` informations.
 * Check:
 
 ```bash
