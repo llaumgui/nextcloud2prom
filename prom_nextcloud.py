@@ -81,15 +81,16 @@ class Collector:
         """
         Display iterative information from part of JSON.
         """
+        info_data = {}
+
         for item, item_value in part_json:
-            info_data = {}
             item_id = item.replace(".", "_")
             current_id = f"{part_id}_{item_id}"
             current_title = f"{part_title} `{item}` information."
 
             # For string
             if isinstance(item_value, str):
-                info_data[item] = item_value
+                info_data[item_id] = item_value
 
             # For numeric
             elif isinstance(item_value, int):
@@ -106,9 +107,9 @@ class Collector:
                 # Recurtion
                 self.__json_iterator(item_value.items(), current_id, current_title)
 
-            # "Dump" informations
-            if info_data:
-                Info(current_id, current_title, registry=self.__registry).info(info_data)
+        # "Dump" informations
+        if info_data:
+            Info(part_id, part_title, registry=self.__registry).info(info_data)
 
 
 def _main():
