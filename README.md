@@ -1,5 +1,8 @@
 # Nextcloud to prom
 
+[![Author][ico-bluesky]][link-bluesky]
+[![Software License][ico-license]](LICENSE)
+
 Get Nextcloud server's info in JSON and convert to [node_exporter textfile format](https://github.com/prometheus/node_exporter?tab=readme-ov-file#textfile-collector).
 
 ![image](https://github.com/user-attachments/assets/ad11f6a0-9924-4cb8-9481-4a24d06fe803)
@@ -81,3 +84,8 @@ python -m venv env
 source env/bin/activate
 pip install -r requirements.txt
 ```
+
+[ico-bluesky]: https://img.shields.io/static/v1?label=Author&message=llaumgui&color=208bfe&logo=bluesky&style=flat-square
+[link-bluesky]: https://bsky.app/profile/llaumgui.kulakowski.fr
+[ico-version]: https://img.shields.io/docker/v/llaumgui/httpd?sort=semver&color=%2496ed&logo=docker&style=flat-square
+[ico-license]: https://img.shields.io/github/license/llaumgui/nextcloud2prom?style=flat-square
