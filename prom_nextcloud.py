@@ -84,7 +84,7 @@ class Collector:
         info_data = {}
 
         for item, item_value in part_json:
-            item_id = item.replace(".", "_")
+            item_id = item.replace(".", "_").replace("-", "_")
             current_id = f"{part_id}_{item_id}"
             current_title = f"{part_title} `{item}` information."
 
