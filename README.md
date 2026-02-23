@@ -1,5 +1,8 @@
 # Nextcloud to prom
 
+> [!WARNING]  
+> Metrics is now a Nextcloud (>=33) feature. Please [use standard endpoint](https://docs.nextcloud.com/server/latest/admin_manual/configuration_monitoring/index.html).
+
 [![Author][ico-bluesky]][link-bluesky]
 [![Software License][ico-license]](LICENSE)
 
